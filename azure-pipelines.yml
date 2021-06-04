@@ -15,3 +15,38 @@ variables:
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      $tenantPath = './principalworkplace'
+      $tenantId = '3bea478c-1684-4a8c-8e85-045ec54ba430'
+      Write-Host 'git checkout main...'
+      git config --global core.longpaths true #needed for Windows
+      git checkout main
+      
+      Write-Host 'Clean git folder...'
+      Remove-Item $tenantPath -Force -Recurse
+      
+      Write-Host 'Installing modules...'
+      Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -Force
+      Install-Module AzureADExporter -Scope CurrentUser -Force
+      
+      Write-Host 'Connecting to AzureAD...'
+      #Connect-AADExporter -TenantId $tenantId
+      
+      Write-Host 'Starting backup...'
+      #Export-AzureAD $tenantPath -All
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host 'Updating repo...'
+      git config user.email "dlisisr-dirsvcs@exchange.principal.com"
+      git config user.name "ADO pipeline"
+      git add -u
+      git add -A
+      git commit -m "ADO Update"
+      #git push origin
